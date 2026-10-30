@@ -88,10 +88,12 @@ const demoUsers = [
   }
 ];
 
-async function seed() {
+async function seedDemoData() {
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB for seeding...');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(MONGO_URI);
+      console.log('Connected to MongoDB for seeding...');
+    }
 
     // Clean up previous seeded data (only the demo accounts to avoid deleting user's own account)
     const demoEmails = demoUsers.map(u => u.email);
@@ -172,12 +174,22 @@ async function seed() {
     console.log('  Email: rohan@skillswap.com | Password: password123');
     console.log('  Email: sneha@skillswap.com | Password: password123');
 
-    await mongoose.disconnect();
-    process.exit(0);
+    if (require.main === module) {
+      await mongoose.disconnect();
+      process.exit(0);
+    }
   } catch (err) {
     console.error('Seeding error:', err);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw err;
   }
 }
 
-seed();
+if (require.main === module) {
+  seedDemoData();
+}
+
+module.exports = { seedDemoData };
+
